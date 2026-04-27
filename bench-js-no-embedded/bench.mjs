@@ -3,6 +3,7 @@
 import {
   checkGnuTime,
   createFormatters,
+  createOxfmtBenchmarks,
   printHeader,
   runHyperfine,
   runMemoryBenchmarks,
@@ -17,6 +18,7 @@ async function main() {
 
   const dataDir = "./data";
   const formatters = createFormatters("..", ".");
+  const oxfmtBenchmarks = createOxfmtBenchmarks(formatters, dataDir);
 
   printHeader("Benchmarking JS/TS (no embedded)");
 
@@ -40,11 +42,11 @@ async function main() {
     "-n=prettier",
     "-n=prettier+oxc-parser",
     "-n=biome",
-    "-n=oxfmt",
+    ...oxfmtBenchmarks.map((bench) => `-n=${bench.name}`),
     formatters.prettier(dataDir),
     formatters.prettier(dataDir, "prettierrc-oxc.json"),
     formatters.biome(dataDir),
-    formatters.oxfmt(dataDir),
+    ...oxfmtBenchmarks.map((bench) => bench.command),
   ]);
 
   await runMemoryBenchmarks(
@@ -64,11 +66,10 @@ async function main() {
         command: formatters.biome(dataDir),
         prepare: prepareCmd,
       },
-      {
-        name: "oxfmt",
-        command: formatters.oxfmt(dataDir),
+      ...oxfmtBenchmarks.map((bench) => ({
+        ...bench,
         prepare: prepareCmd,
-      },
+      })),
     ],
     BENCHMARK_RUNS,
   );

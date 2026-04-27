@@ -3,6 +3,7 @@
 import {
   checkGnuTime,
   createFormatters,
+  createOxfmtBenchmarks,
   printHeader,
   runHyperfine,
   runMemoryBenchmarks,
@@ -17,6 +18,7 @@ async function main() {
 
   const dataDir = "./data";
   const formatters = createFormatters("..", ".");
+  const oxfmtBenchmarks = createOxfmtBenchmarks(formatters, dataDir);
 
   printHeader("Benchmarking Full features");
 
@@ -38,9 +40,9 @@ async function main() {
     prepareCmd,
     "--shell=bash",
     "-n=prettier+oxc-parser",
-    "-n=oxfmt",
+    ...oxfmtBenchmarks.map((bench) => `-n=${bench.name}`),
     formatters.prettier(dataDir),
-    formatters.oxfmt(dataDir),
+    ...oxfmtBenchmarks.map((bench) => bench.command),
   ]);
 
   await runMemoryBenchmarks(
@@ -50,11 +52,10 @@ async function main() {
         command: formatters.prettier(dataDir),
         prepare: prepareCmd,
       },
-      {
-        name: "oxfmt",
-        command: formatters.oxfmt(dataDir),
+      ...oxfmtBenchmarks.map((bench) => ({
+        ...bench,
         prepare: prepareCmd,
-      },
+      })),
     ],
     BENCHMARK_RUNS,
   );

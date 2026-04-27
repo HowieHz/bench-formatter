@@ -2,9 +2,16 @@ import { execSync, spawn } from "child_process";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 
-const FORMATTER_NAMES = ["prettier", "prettier+oxc-parser", "biome", "oxfmt"];
+const OXFMT_THREAD_COUNTS = [1, 2, 3, 4];
+const FORMATTER_NAMES = [
+  "prettier",
+  "prettier+oxc-parser",
+  "biome",
+  "oxfmt",
+  ...OXFMT_THREAD_COUNTS.map((threads) => `oxfmt --threads ${threads}`),
+];
 
-export { FORMATTER_NAMES };
+export { FORMATTER_NAMES, OXFMT_THREAD_COUNTS };
 
 export function setupCwd(importMetaUrl) {
   const __dirname = dirname(fileURLToPath(importMetaUrl));
@@ -24,8 +31,25 @@ export function createFormatters(projectRoot, configDir) {
     biome: (files) =>
       `${biomeBin} format --write --files-ignore-unknown=true --config-path ${configDir} ${files}`,
 
-    oxfmt: (files) => `${oxfmtBin} --config ${configDir}/oxfmtrc.json ${files}`,
+    oxfmt: (files, options = {}) => {
+      const threadsArg =
+        options.threads === undefined ? "" : ` --threads ${options.threads}`;
+      return `${oxfmtBin} --config ${configDir}/oxfmtrc.json${threadsArg} ${files}`;
+    },
   };
+}
+
+export function createOxfmtBenchmarks(formatters, files) {
+  return [
+    {
+      name: "oxfmt",
+      command: formatters.oxfmt(files),
+    },
+    ...OXFMT_THREAD_COUNTS.map((threads) => ({
+      name: `oxfmt --threads ${threads}`,
+      command: formatters.oxfmt(files, { threads }),
+    })),
+  ];
 }
 
 // ---

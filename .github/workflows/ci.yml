@@ -50,4 +50,12 @@ jobs:
         with:
           tool: hyperfine
 
-      - run: pnpm run bench
+      - run: pnpm run update-readme
+
+      - name: Publish updated README in summary
+        run: |
+          {
+            echo '# Updated README'
+            echo
+            cat README.md
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -3,6 +3,7 @@
 import {
   checkGnuTime,
   createFormatters,
+  createOxfmtBenchmarks,
   printHeader,
   runHyperfine,
   runMemoryBenchmarks,
@@ -18,6 +19,7 @@ async function main() {
   const dataFile = "./data/parser.ts";
   const dataFileBak = "./data/parser.ts.bak";
   const formatters = createFormatters("..", ".");
+  const oxfmtBenchmarks = createOxfmtBenchmarks(formatters, dataFile);
 
   printHeader("Benchmarking Large Single File");
 
@@ -41,11 +43,11 @@ async function main() {
     "-n=prettier",
     "-n=prettier+oxc-parser",
     "-n=biome",
-    "-n=oxfmt",
+    ...oxfmtBenchmarks.map((bench) => `-n=${bench.name}`),
     formatters.prettier(dataFile),
     formatters.prettier(dataFile, "prettierrc-oxc.json"),
     formatters.biome(dataFile),
-    formatters.oxfmt(dataFile),
+    ...oxfmtBenchmarks.map((bench) => bench.command),
   ]);
 
   await runMemoryBenchmarks(
@@ -65,11 +67,10 @@ async function main() {
         command: formatters.biome(dataFile),
         prepare: prepareCmd,
       },
-      {
-        name: "oxfmt",
-        command: formatters.oxfmt(dataFile),
+      ...oxfmtBenchmarks.map((bench) => ({
+        ...bench,
         prepare: prepareCmd,
-      },
+      })),
     ],
     BENCHMARK_RUNS,
   );
