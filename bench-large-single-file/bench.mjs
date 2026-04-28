@@ -10,8 +10,8 @@ import {
   setupCwd,
 } from "../shared/utils.mjs";
 
-const WARMUP_RUNS = 2;
-const BENCHMARK_RUNS = 5;
+const WARMUP_RUNS = 3;
+const BENCHMARK_RUNS = 10;
 
 async function main() {
   setupCwd(import.meta.url);
